@@ -1,39 +1,45 @@
 from game import *
-import pygame, random, math
+import random, math
 from pygame.locals import *
-# Its basically four screens in which the player will move simultaneously, avoiding obstacles and other stuff
-#from new.game import getrect
 
 
 def main():
-    global star, diamond, speed, score, lives, toggle, heart, lose_game, high_score
+    global star, diamond, speed, score, lives, toggle, heart, lose_game, high_score     # Global variables
+    """ Getting assets ready """
     high_score = getlinesfrom('high_score.txt')
     star = pygame.image.load("star.png")
     heart = pygame.image.load('heart.png')
     diamond = pygame.image.load("diamond.png")
-    initial_speed = 4
-    lose_game = False
-    speed = 2
+    """Game Settings for the particular level """
+    initial_speed = 4                           # Initial speed of the objects
+    speed = initial_speed                       # Speed during gameplay
     lives = 3
-    heart_count = 1
+    heart_count = 1                             # To give extra lives at regular score intervals
     score = 0
-    initial_freq = 0.2
-    freq = 0.4
-    counter = 0
-    box_data = [[], [], [], [], [], [], [], []]
-    gamestate = [True, True, True, True]
-    toggle = True
+    initial_freq = 0.2                          # Initial frequency of the object's appearance
+    freq = initial_freq                         # Frequency during gameplay
+    counter = 0                                 # To count till next entry of new object
+    box_data = [[], [], [], [], [], [], [], []] # To keep track of Objects on all 8 tracks
+    gamestate = [True, True, True, True]        # To keep track of positions of the 4 pairs of tracks
+    toggle = True                               # To track the functional direction of tracks (Top-left or Bottom-right)
+    lose_game = False                           # To ensure once lost the Game Ends
+
+    """ Assets Properties """
     TextColor = Black
+
     while True:  # Main Game Loop
         if lose_game:
-            while(True):
+            """ If Game is lost the game stops and waits for user input to either restart the Game or quit"""
+            while True:
                 pygame.display.update()
                 center_rect = getrect(500, 400, Display_size[0]/2, Display_size[1]/2, Red)
                 if score > int(high_score[0]):
-                    getfont(str('New High Score: ' + str(score)), 'bahnchrift', 50, TextColor, center_rect.midtop[0], center_rect.top + 50)
+                    getfont(str('New High Score: ' + str(score)), 'bahnchrift', 50, TextColor, center_rect.midtop[0],
+                            center_rect.top + 50)
                     writelinesto('high_score.txt', score)
                 else:
-                    getfont(str('Your Score: ' + str(score)), 'bahnchrift', 50, TextColor, center_rect.midtop[0], center_rect.top + 50)
+                    getfont(str('Your Score: ' + str(score)), 'bahnchrift', 50, TextColor, center_rect.midtop[0],
+                            center_rect.top + 50)
                 replay_rect = getrect(300, 50, center_rect.midtop[0], center_rect.top + 200, White)
                 getfont('Replay', 'bahnchrift', 50, TextColor, replay_rect.center[0], replay_rect.center[1])
                 quit_rect = getrect(300, 50, center_rect.midtop[0], center_rect.top + 300, White)
@@ -46,6 +52,7 @@ def main():
                             return "Go to level 1"
                         elif quit_rect.collidepoint(event.pos):
                             quitgame()
+        """ If Game not lost, continue with the Gameplay """
         drawSurface(gamestate, box_data)
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -93,10 +100,35 @@ def main():
 
 
 def drawSurface(gamestate, box_data):
-    # Set Colors
+
+    def check_end(obj, box):
+        """ Checks if the object has reached its end of the bar, and if yes removes the object from the list and
+        performs necessary action according to the final position of the object """
+        global lives, lose_game, score
+        if obj[1] > bar_length:  # If the sprite has reached its length, check for its status and then delete it
+            if (obj[0] == star) & ((rect.center[0] == center_rect.center[0]) | (rect.center[1] == center_rect.center[1])):
+                lives -= 1
+                if lives == 0:
+                    lose_game = True
+            elif obj[0] == diamond:
+                if (rect.center[0] == center_rect.center[0]) | (rect.center[1] == center_rect.center[1]):
+                    score += 100
+                else:
+                    score -= 100
+                    if score < 0:
+                        lose_game = True
+            elif obj[0] == heart:
+                if (rect.center[0] == center_rect.center[0]) | (rect.center[1] == center_rect.center[1]):
+                    if lives < 5:
+                        lives += 1
+            del box_data[box][0]
+
+
     global score, lives, lose_game, high_score
-    bar_length = 420
-    bar_width = 50
+
+    """ Assets properties """
+    bar_length = Display_size[0]*0.4
+    bar_width = bar_length/8
     BGcolor = Blue
     TextColor = Black
     button_color = Yellowish
@@ -104,402 +136,175 @@ def drawSurface(gamestate, box_data):
     border_color = Green
     inner_boxcolor = Brown
     border = 5
+
+    """ Displaying Game State """
     Surface.fill(BGcolor)
     getfont(caption, 'bahnchrift', 50, TextColor, Display_size[0]/4, Display_size[1]/12, italic=True)
-    textbox = getfont(str("Score: " + str(score)), 'bahnchrift', 50, TextColor, Display_size[0]*3/4, Display_size[1]/12, italic=True)
-    textbox = getfont(str("Lives: " + str(lives)), 'bahnchrift', 50, TextColor, textbox.bottomleft[0], textbox.bottomleft[1], alignment='topleft',  italic=True)
-    getfont(str("High Score: " + str(int(high_score[0]))), 'bahnchrift', 50, TextColor, textbox.bottomleft[0], textbox.bottomleft[1], alignment='topleft',  italic=True)
-    # Rectangular Objects
+    textbox = getfont(str("Score: " + str(score)), 'bahnchrift', 50, TextColor, Display_size[0]*3/4, Display_size[1]/12,
+                      italic=True)
+    textbox = getfont(str("Lives: " + str(lives)), 'bahnchrift', 50, TextColor, textbox.bottomleft[0],
+                      textbox.bottomleft[1], alignment='topleft',  italic=True)
+    getfont(str("High Score: " + str(int(high_score[0]))), 'bahnchrift', 50, TextColor, textbox.bottomleft[0],
+            textbox.bottomleft[1], alignment='topleft',  italic=True)
+
+    """ Creating Central Boxes """
     center_rect = pygame.rect.Rect(0, 0, 3*bar_width, 3*bar_width)
     center_rect.center = (Display_size[0]/2, Display_size[1]/2)
     getrect(3*bar_width, bar_width, Display_size[0] / 2, Display_size[1] / 2, inner_boxcolor)
     getrect(bar_width, 3*bar_width, Display_size[0] / 2, Display_size[1] / 2, inner_boxcolor)
     getrect(bar_width, bar_width, Display_size[0] / 2, Display_size[1] / 2, Black, border=border)
     rect = pygame.rect.Rect(center_rect[0], center_rect[1], bar_length, bar_width)
-    """If gamestat[i] means to check if the left(i = 0), right(i = 2), top(i = 1), or bottom(i = 3) is in its initial
+
+    """ gamestat[i] means to check if the left(i = 0), right(i = 2), top(i = 1), or bottom(i = 3) is in its initial
     position or not."""
-# Left Rectangle
-    rect.midright = center_rect.midleft  # This rect Object will be used for all reference purposes
-    if gamestate[0]:  # This means that the left boxes are in their initial positions (up position)
-        pygame.draw.rect(Surface, button_color2, rect)  # drawing red box
-        for obj in box_data[0]:  # for every sprite in box_data we blit it on the Surface
+    """Drawing and simulating Left Rectangle """
+    rect.midright = center_rect.midleft
+
+    if gamestate[0]:
+        """ Creating lower box """
+        pygame.draw.rect(Surface, button_color2, rect)
+        for obj in box_data[0]:
             Surface.blit(obj[0], (rect.topleft[0] + obj[1], rect.topleft[1]))
             obj[1] += speed
-            if obj[1] > bar_length:  # If the sprite has reached its length, check for its status and then delete it
-                if (obj[0] == star) & (rect.midright == center_rect.midleft):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midright == center_rect.midleft):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if(rect.midright == center_rect.midleft):
-                        if lives < 5:
-                            lives += 1
-                del box_data[0][0]
+            check_end(obj, 0)
+        """ Creating upper box"""
         rect.bottom = rect.top
         pygame.draw.rect(Surface, button_color, rect)
         pygame.draw.line(Surface, Black, rect.bottomleft, rect.bottomright)
         for obj in box_data[1]:
             Surface.blit(obj[0], (rect.topleft[0] + obj[1], rect.topleft[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midright == center_rect.midleft):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midright == center_rect.midleft):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if(rect.midright == center_rect.midleft):
-                        if lives < 5:
-                            lives += 1
-                del box_data[1][0]
+            check_end(obj, 1)
     else:
+        """ Creating upper box """
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[1]:
             Surface.blit(obj[0], (rect.topleft[0] + obj[1], rect.topleft[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midright == center_rect.midleft):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midright == center_rect.midleft):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if(rect.midright == center_rect.midleft):
-                        if lives < 5:
-                            lives += 1
-                del box_data[1][0]
+            check_end(obj, 1)
+        """ Creating lower box """
         rect.top = rect.bottom
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[0]:
             Surface.blit(obj[0], (rect.topleft[0] + obj[1], rect.topleft[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midright == center_rect.midleft):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midright == center_rect.midleft):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if(rect.midright == center_rect.midleft):
-                        if lives < 5:
-                            lives += 1
-                del box_data[0][0]
+            check_end(obj, 0)
         pygame.draw.line(Surface, Black, rect.topleft, rect.topright)
-    # Drawing border if toggle = true
+    """ Drawing boundary if toggle is active"""
     if toggle:
-        getrect(bar_length, 3*bar_width, center_rect.topleft[0], center_rect.topleft[1], Lightblue, border=border, alignment='topright')
+        getrect(bar_length, 3*bar_width, center_rect.topleft[0], center_rect.topleft[1], Lightblue, border=border,
+                alignment='topright')
 
-# Right Rectangle
+    """ Drawing and simulating Right Rectangle """
     rect.midleft = center_rect.midright
     if gamestate[2]:
+        """ Creating upper box """
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[4]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width - obj[1], rect.bottomright[1] - bar_width))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midleft == center_rect.midright):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midleft == center_rect.midright:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midleft == center_rect.midright:
-                        if lives < 5:
-                            lives += 1
-                del box_data[4][0]
+            check_end(obj, 4)
+        """ Creating lower box """
         rect.top = rect.bottom
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[5]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width - obj[1], rect.bottomright[1] - bar_width))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midleft == center_rect.midright):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midleft == center_rect.midright):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midleft == center_rect.midright:
-                        if lives < 5:
-                            lives += 1
-                del box_data[5][0]
+            check_end(obj, 5)
     else:
+        """ Creating lower box """
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[5]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width - obj[1], rect.bottomright[1] - bar_width))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midleft == center_rect.midright):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midleft == center_rect.midright):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midleft == center_rect.midright:
-                        if lives < 5:
-                            lives += 1
-                del box_data[5][0]
+            check_end(obj, 5)
+        """Creating upper box """
         rect.bottom = rect.top
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[4]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width - obj[1], rect.bottomright[1] - bar_width))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midleft == center_rect.midright):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if (rect.midleft == center_rect.midright):
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midleft == center_rect.midright:
-                        if lives < 5:
-                            lives += 1
-                del box_data[4][0]
-    # Drawing border if toggle = false
+            check_end(obj, 4)
+
+    """ Drawing boundary if toggle is inactive """
     if not toggle:
-        getrect(bar_length, 3*bar_width, center_rect.topright[0], center_rect.topright[1], Lightblue, border=border, alignment='topleft')
+        getrect(bar_length, 3*bar_width, center_rect.topright[0], center_rect.topright[1], Lightblue, border=border,
+                alignment='topleft')
     rect = pygame.rect.Rect(center_rect[0], center_rect[1], bar_width, bar_length)
 
-# Top Rectangle
+    """ Drawing and simulating Top Rectangle """
     rect.midbottom = center_rect.midtop
     if gamestate[1]:
+        """ Creating left box """
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[2]:
             Surface.blit(obj[0], (rect.topleft[0], rect.topleft[1] + obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midbottom == center_rect.midtop):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midbottom == center_rect.midtop:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midbottom == center_rect.midtop:
-                        if lives < 5:
-                            lives += 1
-                del box_data[2][0]
+            check_end(obj, 2)
+        """ Creating right box """
         rect.left = rect.right
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[3]:
             Surface.blit(obj[0], (rect.topleft[0], rect.topleft[1] + obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midbottom == center_rect.midtop):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midbottom == center_rect.midtop:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midbottom == center_rect.midtop:
-                        if lives < 5:
-                            lives += 1
-                del box_data[3][0]
+            check_end(obj, 3)
         pygame.draw.line(Surface, Black, rect.topleft, rect.bottomleft)
     else:
+        """ Creating right box """
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[3]:
             Surface.blit(obj[0], (rect.topleft[0], rect.topleft[1] + obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midbottom == center_rect.midtop):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midbottom == center_rect.midtop:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midbottom == center_rect.midtop:
-                        if lives < 5:
-                            lives += 1
-                del box_data[3][0]
+            check_end(obj, 3)
+        """ Creating left box """
         rect.right = rect.left
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[2]:
             Surface.blit(obj[0], (rect.topleft[0], rect.topleft[1] + obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midbottom == center_rect.midtop):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midbottom == center_rect.midtop:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midbottom == center_rect.midtop:
-                        if lives < 5:
-                            lives += 1
-                del box_data[2][0]
+            check_end(obj, 2)
         pygame.draw.line(Surface, Black, rect.topright, rect.bottomright)
-    # Drawing border if toggle = true
+    """ Drawing boundary if toggle is active"""
     if toggle:
-        getrect(3*bar_width, bar_length, center_rect.topleft[0], center_rect.topleft[1], Lightblue, border=border, alignment='bottomleft')
+        getrect(3*bar_width, bar_length, center_rect.topleft[0], center_rect.topleft[1], Lightblue, border=border,
+                alignment='bottomleft')
 
-# Bottom Rectangle
+    """ Drawing and simulating Bottom Rectangle """
     rect.midtop = center_rect.midbottom
     if gamestate[3]:
+        """ Drawing right box """
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[6]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width, rect.bottomright[1] - bar_width - obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midtop == center_rect.midbottom):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midtop == center_rect.midbottom:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midtop == center_rect.midbottom:
-                        if lives < 5:
-                            lives += 1
-                del box_data[6][0]
+            check_end(obj, 6)
+        """ Drawing left box """
         rect.right = rect.left
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[7]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width, rect.bottomright[1] - bar_width - obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midtop == center_rect.midbottom):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midtop == center_rect.midbottom:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midtop == center_rect.midbottom:
-                        if lives < 5:
-                            lives += 1
-                del box_data[7][0]
+            check_end(obj, 7)
         pygame.draw.line(Surface, Black, rect.topright, rect.bottomright)
     else:
+        """ Drawing left box """
         pygame.draw.rect(Surface, button_color, rect)
         for obj in box_data[7]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width, rect.bottomright[1] - bar_width - obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midtop == center_rect.midbottom):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midtop == center_rect.midbottom:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midtop == center_rect.midbottom:
-                        if lives < 5:
-                            lives += 1
-                del box_data[7][0]
+            check_end(obj, 7)
+        """ Drawing right box """
         rect.left = rect.right
         pygame.draw.rect(Surface, button_color2, rect)
         for obj in box_data[6]:
             Surface.blit(obj[0], (rect.bottomright[0] - bar_width, rect.bottomright[1] - bar_width - obj[1]))
             obj[1] += speed
-            if obj[1] > bar_length:
-                if (obj[0] == star) & (rect.midtop == center_rect.midbottom):
-                    lives -= 1
-                    if lives == 0:
-                        lose_game = True
-                elif obj[0] == diamond:
-                    if rect.midtop == center_rect.midbottom:
-                        score += 100
-                    else:
-                        score -= 100
-                        if score < 0:
-                            lose_game = True
-                elif obj[0] == heart:
-                    if rect.midtop == center_rect.midbottom:
-                        if lives < 5:
-                            lives += 1
-                del box_data[6][0]
+            check_end(obj, 6)
         pygame.draw.line(Surface, Black, rect.topleft, rect.bottomleft)
-    # Drawing border if toggle = false
+    """ Drawing boundary if toggle is inactive """
     if not toggle:
-        getrect(3*bar_width, bar_length, center_rect.bottomleft[0], center_rect.bottomleft[1], Lightblue, border=border, alignment='topleft')
+        getrect(3*bar_width, bar_length, center_rect.bottomleft[0], center_rect.bottomleft[1], Lightblue, border=border,
+                alignment='topleft')
 
     getrect(3*bar_width, 3*bar_width, Display_size[0]/2, Display_size[1]/2, border_color, border=border)
     pygame.display.update()

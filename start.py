@@ -1,16 +1,17 @@
 from game import *
-
+from pygame.locals import *
 
 def main():
     # Set Colors
     BGcolor = Yellowish
     TextColor = Purple
     rect_color = Red
-    text_size = 25
+    text_size = Display_size[1]/40
+
     while True: # Main Game Loop
         pygame.display.update()
         Surface.fill(BGcolor)
-        # Fonts
+        """ The Rules of the game to be printed line by line """
         rect = getfont(caption, 'bahnschrift', 50, TextColor, Display_size[0]/2, Display_size[1]/10)
         rect = getfont("Rules", 'bahnschrift', 30, TextColor, Display_size[0]/2, rect.bottom + 20)
         rect = getfont('1. Control the bars by arrow keys or WASD keys', 'bahnschrift', text_size, TextColor, 50, rect.bottom + 50, alignment='topleft')
@@ -25,6 +26,7 @@ def main():
 
         for event in pygame.event.get():
             if event.type == QUIT:
+                """ Quit Event """
                 quitgame()
             elif event.type == MOUSEMOTION:
                 if start_rect.collidepoint(event.pos):
